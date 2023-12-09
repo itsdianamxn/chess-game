@@ -20,8 +20,10 @@
 #define CLIENT_ID 10
 #define GAME_STATE 20
 #define MOVE 30
+
 #define WHITE 1
 #define BLACK -1
+
 #define ROOK 1
 #define KNIGHT 2
 #define BISHOP 3
@@ -298,6 +300,7 @@ int sendMessage(int fd, int msg_id, void *msg, size_t msg_size)
 
 int is_game_finished(int game_board[8][8], int moves[4], int side)
 {
+    printf("%d\n",game_board[moves[0]][moves[1]]);
     if(game_board[moves[0]][moves[1]] == PAWN * side)
     {
         if(side == WHITE && moves[2] == 0)
@@ -481,6 +484,7 @@ int game(int fd1, int fd2)
             for (int i = 0; i < 4; i++)
                 printf("%d, ", buffer[i]);
             printf("\n");
+            state = is_game_finished(game_board, buffer, BLACK);
             piece_moved = game_board[buffer[0]][buffer[1]];
             game_board[buffer[0]][buffer[1]] = 0;
             game_board[buffer[2]][buffer[3]] = piece_moved;
@@ -490,7 +494,7 @@ int game(int fd1, int fd2)
                 {
                     endGame(fd1,fd2,DISCONNECTED);
                 }
-            state = is_game_finished(game_board, buffer, BLACK);
+            
             printf("State 2->1: %d\n", state);
             if (state)
             {
