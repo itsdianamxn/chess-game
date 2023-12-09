@@ -48,7 +48,7 @@ communications::communications(const char* ip, int port, int* board, QWidget *pa
     start();
 }
 
-void communications::readOrder()
+void communications::readSide()
 {
     char blackOrWhite;
     if (read(sd, &blackOrWhite, sizeof(char)) <= 0)
@@ -59,21 +59,21 @@ void communications::readOrder()
                               QMessageBox::Ok);
         QCoreApplication::exit();
     }
-
     first = blackOrWhite == '1';
-    begun = 1;
-    emit startGame();
 
-    if (!first) {
-        receive();
-    }
+    qDebug("Im %c, my server is: %d", blackOrWhite, sd);
+    begun = true;
+    emit startGame();
 }
 
 void communications::readMove()
 {
-    int buffer[4];
+    struct
+    {
+        int x1, y1, x2, y2;
+    } move;
     int piece = 0;
-    if(read(sd, &buffer, sizeof(int)*4) < 0)
+    if(read(sd, &move, sizeof(int)*4) <= 0)
     {
         QMessageBox::critical((QWidget*)parent(),
                               tr("Conenction Error"),
@@ -81,9 +81,10 @@ void communications::readMove()
                               QMessageBox::Ok);
         QCoreApplication::exit();
     }
-    piece = board[buffer[0]*8+buffer[1]];
-    board[buffer[0]*8+buffer[1]] = 0;
-    board[buffer[2]*8+buffer[3]] = piece;
+    piece = board[move.x1*8+move.y1];
+    board[move.x1*8+move.y1] = 0;
+    board[move.x2*8+move.y2] = piece;
+    qDebug("MOVE read: %d %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
 
     emit boardUpdate();
 
@@ -92,7 +93,7 @@ void communications::readMove()
 void communications::readState()
 {
     int state;
-    if (read(sd, &state, sizeof(int)) < 0)
+    if (read(sd, &state, sizeof(int)) <= 0)
     {
         QMessageBox::critical((QWidget*)parent(),
                               tr("Conenction Error"),
@@ -100,11 +101,21 @@ void communications::readState()
                               QMessageBox::Ok);
         QCoreApplication::exit();
     }
+    qDebug("State read: %d", state );
+    if (state == P_DISCONNECTED)
+    {
+        QMessageBox::information((QWidget*)parent(),
+                                 tr("Game finished"),
+                                 tr("Opponent disconected :("),
+                                 QMessageBox::Retry);
+        QCoreApplication::exit();
+
+    }
     if (state == WHITEW)
     {
         QMessageBox::information((QWidget*)parent(),
-                              tr("Conenction Error"),
-                              tr("White wins. Black disconnected"),
+                              tr("Game finished"),
+                              tr("White wins!"),
                               QMessageBox::Retry);
         QCoreApplication::exit();
 
@@ -112,26 +123,22 @@ void communications::readState()
     if (state == BLACKW)
     {
         QMessageBox::information((QWidget*)parent(),
-                              tr("Conenction Error"),
-                              tr("Black wins. White disconnected"),
+                              tr("Game finished"),
+                              tr("Black wins!"),
                               QMessageBox::Retry);
         QCoreApplication::exit();
     }
     if (state == DRAW)
     {
         QMessageBox::information((QWidget*)parent(),
-                              tr("Conenction Error"),
-                              tr("draw"),
-                                 QMessageBox::Retry);
-        QCoreApplication::exit();
+                              tr("Draw"),
+                              tr("It's a draw"),
+                              QMessageBox::Retry);
     }
     return;
 }
 void communications::run()
 {
-    if(allow)
-    receive();
-
     while (1 /*game not finished*/)
     {
         // (apel blocant pina cind serverul raspunde); Atentie si la cum se face read- vezi cursul!
@@ -180,33 +187,25 @@ void communications::send(int messageId, int x1, int y1, int x2, int y2, QString
         QCoreApplication::exit();
     }
 }
-void communications::allowed(bool x)
-{
-    allow = x;
-}
 bool communications::receive()
 {
-    int buffer;
-    //while(allow)
-    //{
-        if (read(sd, &buffer, sizeof(int)) < 0)
-        {
-            return false;
-        }
-        allow = 0;
-        if(!begun && buffer == CLIENT_ID)
-        {
-            readOrder();
-        }
-        if(buffer == STATE)
-        {
-            readState();
-        }
-        if(buffer == MOVE)
-        {
-            readMove();
-        }
-    //}
+    int message_id;
+    if (read(sd, &message_id, sizeof(int)) <= 0)
+    {
+        return false;
+    }
+    if (!begun && message_id == CLIENT_ID)
+    {
+        readSide();
+    }
+    if (message_id == STATE)
+    {
+        readState();
+    }
+    if (message_id == MOVE)
+    {
+        readMove();
+    }
     return true;
 }
 void communications::close()

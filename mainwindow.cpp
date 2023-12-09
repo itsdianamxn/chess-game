@@ -12,11 +12,23 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    init_board();
-    comm = new communications("127.0.0.1", 27182, (int*)board, parent);
+    comm = new communications("192.168.1.104", 27182, (int*)board, parent);
     connect(comm, SIGNAL(startGame()), this, SLOT(startPlay()));
     connect(comm, SIGNAL(boardUpdate()), this, SLOT(yourTurn()));
     connect(comm, SIGNAL(closeGame()), this, SLOT(showWinner()));
+
+    pixes[PAWN + WHITE] = QPixmap("Images/lightPawn.png");
+    pixes[ROOK + WHITE] = QPixmap("Images/lightRook.png");
+    pixes[KNIGHT + WHITE] = QPixmap("Images/lightKnight.png");
+    pixes[BISHOP + WHITE] = QPixmap("Images/lightBishop.png");
+    pixes[QUEEN + WHITE] = QPixmap("Images/lightQueen.png");
+    pixes[KING + WHITE] = QPixmap("Images/lightKing.png");
+    pixes[PAWN + BLACK] = QPixmap("Images/darkPawn.png");
+    pixes[ROOK + BLACK] = QPixmap("Images/darkRook.png");
+    pixes[KNIGHT + BLACK] = QPixmap("Images/darkKnight.png");
+    pixes[BISHOP + BLACK] = QPixmap("Images/darkBishop.png");
+    pixes[QUEEN + BLACK] = QPixmap("Images/darkQueen.png");
+    pixes[KING + BLACK] = QPixmap("Images/darkKing.png");
 }
 
 MainWindow::~MainWindow() {}
@@ -25,6 +37,8 @@ void MainWindow::startPlay()
 {
     myTurn = comm->isFirst();
     started = true;
+
+    init_board();
     update();
     setWindowTitle(comm->isFirst() ?
         "Chess - You are playing white" :
@@ -70,19 +84,6 @@ void MainWindow::init_board()
     board[7][5] = BISHOP + WHITE;
     board[7][6] = KNIGHT + WHITE;
     board[7][7] = ROOK + WHITE;
-
-    pixes[PAWN + WHITE] = QPixmap("Images/lightPawn.png");
-    pixes[ROOK + WHITE] = QPixmap("Images/lightRook.png");
-    pixes[KNIGHT + WHITE] = QPixmap("Images/lightKnight.png");
-    pixes[BISHOP + WHITE] = QPixmap("Images/lightBishop.png");
-    pixes[QUEEN + WHITE] = QPixmap("Images/lightQueen.png");
-    pixes[KING + WHITE] = QPixmap("Images/lightKing.png");
-    pixes[PAWN + BLACK] = QPixmap("Images/darkPawn.png");
-    pixes[ROOK + BLACK] = QPixmap("Images/darkRook.png");
-    pixes[KNIGHT + BLACK] = QPixmap("Images/darkKnight.png");
-    pixes[BISHOP + BLACK] = QPixmap("Images/darkBishop.png");
-    pixes[QUEEN + BLACK] = QPixmap("Images/darkQueen.png");
-    pixes[KING + BLACK] = QPixmap("Images/darkKing.png");
 }
 
 bool MainWindow::isMyPiece(int piece)
@@ -113,17 +114,16 @@ void MainWindow::drawPiece(int i, int j, int w, QPainter *p)
 void MainWindow::paintEvent(QPaintEvent *event)
 {
     QPainter p(this);
-
     if (!started)
     {
         p.setPen(Qt::white);
         p.drawText(0, 0, width(), height(), Qt::AlignHCenter|Qt::AlignVCenter, "Waiting for your opponent.");
         return;
     }
-
     int w = qMin(width(), height())/9; //size of a square
+    p.fillRect(0, 0, 9*w, 10*w, QBrush(Qt::black, Qt::SolidPattern));
+
     int margin = w/2;
-    p.setBackground(Qt::red);
     p.fillRect(margin, margin, 8*w, 8*w, QBrush(Qt::white, Qt::SolidPattern));
     p.setPen(Qt::white);
 
@@ -152,6 +152,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
             drawPiece(i, j, w, &p);
         }
     }
+    if(!myTurn)
+    p.fillRect(margin, margin, 8*w, 8*w, QBrush(QColor(127, 127, 127, 64), Qt::SolidPattern));
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -212,9 +214,7 @@ void MainWindow::dropEvent(QDropEvent *event)
     update();
     event->setDropAction(Qt::MoveAction);
     event->accept();
-    comm->allowed(0);
     comm->send(0,y1, x1, y2, x2, " ");
-    comm->allowed(1);
     myTurn = false;
 }
 
