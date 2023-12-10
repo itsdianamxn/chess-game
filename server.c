@@ -141,6 +141,7 @@ char *conv_addr(struct sockaddr_in address)
 
 int game(int, int);
 int sendMessage(int, int, void *, size_t);
+
 /* programul */
 int main()
 {
@@ -151,9 +152,7 @@ int main()
     fd_set actfds;     /* multimea descriptorilor activi */
     struct timeval tv; /* structura de timp pentru select() */
     int sd, client;    /* descriptori de socket */
-    int optval = 1;    /* optiune folosita pentru setsockopt()*/
-    int fd;            /* descriptor folosit pentru
-                      parcurgerea listelor de descriptori */
+    int optval = 1;    /* optiune folosita pentru setsockopt()*/           
     int nfds;          /* numarul maxim de descriptori */
     socklen_t len;     /* lungimea structurii sockaddr_in */
 
@@ -247,13 +246,40 @@ int main()
         {
             if (t->p1 != -1 && t->p2 != -1 && FD_ISSET(t->p1, &readfds) && FD_ISSET(t->p2, &readfds))
             {
-                printf("Now playing game number %d.\n", t->order_number);
-                if (game(t->p1, t->p2))
+                pid_t child = fork();
+                if (child < 0)
                 {
-                    fflush(stdout);
+                    perror("[server] fork error.\n");
+                    continue;
+                }
+                else if (child == 0)
+                {
+                    printf("Now playing game number %d.\n", t->order_number);
+                    int winner = game(t->p1, t->p2);
+                    switch (winner)
+                    {
+                    case WHITEW:
+                        printf("Game number %d ended with player %d as a winner!\n", t->order_number, t->p1);
+                        delete_room(t->order_number);
+                        exit(0);
+                    case DRAW:
+                        printf("Game number %d ended in a draw!\n", t->order_number);
+                        delete_room(t->order_number);
+                        exit(0);
+                    case BLACKW:
+                        printf("Game number %d ended with player %d as a winner!\n", t->order_number, t->p2);
+                        delete_room(t->order_number);
+                        exit(0);
+                    default:
+                        printf("Error in game number %d. \n", t->order_number);
+                        delete_room(t->order_number);
+                        exit(-1);
+                    }
+                }
+                else
+                {
                     FD_CLR(t->p1, &actfds);
                     FD_CLR(t->p2, &actfds);
-                    delete_room(t->order_number);
                 }
             }
             t = t->next;
@@ -262,34 +288,19 @@ int main()
     } /* while */
 } /* main */
 
-/* realizeaza primirea si retrimiterea unui mesaj unui client */
-
-// void sendMatrix(int sd, int matrix[MATRIX_SIZE][MATRIX_SIZE])
-// {
-//     // Serialize and send the matrix
-//     for (int i = 0; i < MATRIX_SIZE; i++)
-//     {
-//         if (write(sd, matrix[i], sizeof(int) * MATRIX_SIZE) <= 0)
-//         {
-//             perror("Error sending matrix");
-//             exit(EXIT_FAILURE);
-//         }
-//     }
-// }
-
 int sendMessage(int fd, int msg_id, void *msg, size_t msg_size)
 {
 
     printf("I'm gonna send msg_id: %d to client %d. \n", msg_id, fd);
     int bytes = write(fd, &msg_id, sizeof(int));
-    printf("%d\n",bytes);
+    printf("%d\n", bytes);
     if (bytes <= 0)
     {
         perror("[client] Error sending msg_id to client. \n");
         return errno;
     }
     bytes = write(fd, msg, msg_size);
-    printf("%d\n",bytes);
+    printf("%d\n", bytes);
     if (bytes <= 0)
     {
         perror("[client] Error sending message to client. \n");
@@ -300,12 +311,12 @@ int sendMessage(int fd, int msg_id, void *msg, size_t msg_size)
 
 int is_game_finished(int game_board[8][8], int moves[4], int side)
 {
-    printf("%d\n",game_board[moves[0]][moves[1]]);
-    if(game_board[moves[0]][moves[1]] == PAWN * side)
+    printf("%d\n", game_board[moves[0]][moves[1]]);
+    if (game_board[moves[0]][moves[1]] == PAWN * side)
     {
-        if(side == WHITE && moves[2] == 0)
+        if (side == WHITE && moves[2] == 0)
             return WHITEW;
-        if(side == BLACK && moves[2] == 7)
+        if (side == BLACK && moves[2] == 7)
             return BLACKW;
     }
     return 0;
@@ -315,16 +326,12 @@ void endGame(int loser_fd, int winner_fd, int state)
 {
     printf("[server] Client disconnected with descriptor %d. Now it will disconnect with descriptor %d as well. \n", loser_fd, winner_fd);
     fflush(stdout);
-    int exit_code = 0;
-    if (sendMessage(winner_fd, GAME_STATE, &state, sizeof(state)))
-    {
-        close(loser_fd);
-        close(winner_fd);
-        exit_code = 1;
-    }
+
+    sendMessage(winner_fd, GAME_STATE, &state, sizeof(state));
+    if(state != DISCONNECTED)
+    sendMessage(loser_fd, GAME_STATE, &state, sizeof(state));
     close(loser_fd);
     close(winner_fd);
-    exit(exit_code);
 }
 
 int game(int fd1, int fd2)
@@ -334,13 +341,12 @@ int game(int fd1, int fd2)
     char side;
 
     side = '1';
-    printf("Hey! Game started!\n");
 
     if (sendMessage(fd1, CLIENT_ID, &side, sizeof(side)))
     {
         close(fd1);
         close(fd2);
-        return 1;
+        return -1;
     }
     printf("[server] Side WHITE succesfully sent to %d. \n", fd1);
 
@@ -349,22 +355,11 @@ int game(int fd1, int fd2)
     {
         close(fd1);
         close(fd2);
-        return 1;
+        return -1;
     }
     printf("[server] Side BLACK succesfully sent to %d. \n", fd2);
 
-    pid_t child_pid;
-    child_pid = fork();
-    if (child_pid < 0)
-    {
-        close(fd1);
-        close(fd2);
-        perror("[server] Eroare la fork. \n");
-        return 1;
-    }
-    else if (child_pid == 0)
-    {
-        int game_board[8][8] = {
+    int game_board[8][8] = {
         -1,
         -2,
         -3,
@@ -430,90 +425,85 @@ int game(int fd1, int fd2)
         2,
         1,
     };
-    
-        int state;
-        while (1)
+
+    int state;
+    while (1)
+    {
+        printf("Waiting on a move from client1: \n");
+        /// read move from side 1
+        bytes = read(fd1, buffer, sizeof(int) * 4);
+
+        /// check for error from
+        if (bytes <= 0)
         {
-            printf("Waiting on a move from client1: \n");
-            /// read move from side 1
-            bytes = read(fd1, buffer, sizeof(int) * 4);
-
-            /// check for error from
-            if (bytes <= 0)
-            {
-                endGame(fd1,fd2,DISCONNECTED);
-            }
-            for (int i = 0; i < 4; i++)
-                printf("%d, ", buffer[i]);
-            printf("\n");
-
-            state = is_game_finished(game_board, buffer, WHITE);
-            printf("State 1->2: %d\n", state);
-            ////make move
-            int piece_moved = game_board[buffer[0]][buffer[1]];
-            game_board[buffer[0]][buffer[1]] = 0;
-            game_board[buffer[2]][buffer[3]] = piece_moved;
-
-            /// send the state of the game
-            if (sendMessage(fd2, MOVE, buffer, sizeof(buffer)))
-            {
-                    endGame(fd2,fd1,DISCONNECTED);
-            }
-            
-            
-            if (state)
-            {
-                if (sendMessage(fd1, GAME_STATE, &state, sizeof(state)))
-                {
-                    endGame(fd1,fd2,BLACKW);
-                }
-                if (sendMessage(fd2, GAME_STATE, &state, sizeof(state)))
-                {
-                    endGame(fd2,fd1,WHITEW);
-                }
-                endGame(fd2,fd1,state);
-            }
-
-            printf("Waiting on a move from client2: \n");
-            /// read move from client 2
-            bytes = read(fd2, buffer, sizeof(int) * 4);
-            if (bytes <= 0)
-            {
-                endGame(fd2,fd1,WHITEW);
-            }
-            for (int i = 0; i < 4; i++)
-                printf("%d, ", buffer[i]);
-            printf("\n");
-            state = is_game_finished(game_board, buffer, BLACK);
-            piece_moved = game_board[buffer[0]][buffer[1]];
-            game_board[buffer[0]][buffer[1]] = 0;
-            game_board[buffer[2]][buffer[3]] = piece_moved;
-
-            /// send state of the game
-             if (sendMessage(fd1, MOVE, buffer, sizeof(buffer)))
-                {
-                    endGame(fd1,fd2,DISCONNECTED);
-                }
-            
-            printf("State 2->1: %d\n", state);
-            if (state)
-            {
-                if (sendMessage(fd1, GAME_STATE, &state, sizeof(state)))
-                {
-                    endGame(fd1,fd2,DISCONNECTED);
-                }
-                if (sendMessage(fd2, GAME_STATE, &state, sizeof(state)))
-                {
-                    endGame(fd2,fd1,DISCONNECTED);
-                }
-                endGame(fd1,fd2,state);
-            }
-            
-                /// send move of client 2 to client 1
-               
+            endGame(fd1, fd2, DISCONNECTED);
+            return BLACKW;
         }
-        exit(0);
+        for (int i = 0; i < 4; i++)
+            printf("%d, ", buffer[i]);
+        printf("\n");
+
+        state = is_game_finished(game_board, buffer, WHITE);
+        printf("State 1->2: %d\n", state);
+        int piece_moved = game_board[buffer[0]][buffer[1]];
+        game_board[buffer[0]][buffer[1]] = 0;
+        game_board[buffer[2]][buffer[3]] = piece_moved;
+
+        if (sendMessage(fd2, MOVE, buffer, sizeof(buffer)))
+        {
+            endGame(fd2, fd1, DISCONNECTED);
+            return WHITEW;
+        }
+
+        if (state)
+        {
+            if (sendMessage(fd1, GAME_STATE, &state, sizeof(state)))
+            {
+                endGame(fd1, fd2, DISCONNECTED);
+            }
+            if (sendMessage(fd2, GAME_STATE, &state, sizeof(state)))
+            {
+                endGame(fd2, fd1, DISCONNECTED);
+            }
+            endGame(fd2, fd1, state);
+            return state;
+        }
+
+        printf("Waiting on a move from client2: \n");
+        bytes = read(fd2, buffer, sizeof(int) * 4);
+        if (bytes <= 0)
+        {
+            endGame(fd2, fd1, DISCONNECTED);
+            return WHITEW;
+        }
+        for (int i = 0; i < 4; i++)
+            printf("%d, ", buffer[i]);
+        printf("\n");
+        state = is_game_finished(game_board, buffer, BLACK);
+        piece_moved = game_board[buffer[0]][buffer[1]];
+        game_board[buffer[0]][buffer[1]] = 0;
+        game_board[buffer[2]][buffer[3]] = piece_moved;
+
+        if (sendMessage(fd1, MOVE, buffer, sizeof(buffer)))
+        {
+            endGame(fd1, fd2, DISCONNECTED);
+            return BLACKW;
+        }
+
+        printf("State 2->1: %d\n", state);
+        if (state)
+        {
+            if (sendMessage(fd1, GAME_STATE, &state, sizeof(state)))
+            {
+                endGame(fd1, fd2, DISCONNECTED);
+            }
+            if (sendMessage(fd2, GAME_STATE, &state, sizeof(state)))
+            {
+                endGame(fd2, fd1, DISCONNECTED);
+            }
+            endGame(fd1, fd2, state);
+            return state;
+        }
+
     }
-    else
-        return 1;
 }
