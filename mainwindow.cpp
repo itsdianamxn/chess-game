@@ -29,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
     pixes[BISHOP + BLACK] = QPixmap("Images/darkBishop.png");
     pixes[QUEEN + BLACK] = QPixmap("Images/darkQueen.png");
     pixes[KING + BLACK] = QPixmap("Images/darkKing.png");
+    setWindowTitle("Chess");
 }
 
 MainWindow::~MainWindow() {}
@@ -242,7 +243,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 
     qDebug("Start DRAGging %d from (%d,%d)", piece, y, x);
     QPixmap pixmap = pixes[piece].scaled(w, w, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-
+    //QPixmap pixmap = pixes[piece].scaled(w,w);
     QByteArray itemData;
     QDataStream dataStream(&itemData, QIODevice::WriteOnly);
     dataStream << piece << x << y;

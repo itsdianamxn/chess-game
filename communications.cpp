@@ -1,7 +1,7 @@
 #include <QMessageBox>
 #include <QCoreApplication>
 #include <QThread>
-
+#include <QProcess>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -89,7 +89,6 @@ void communications::readMove()
     emit boardUpdate();
 
 }
-
 void communications::readState()
 {
     int state;
@@ -108,6 +107,7 @@ void communications::readState()
                                  tr("Game finished"),
                                  tr("Opponent disconected :("),
                                  QMessageBox::Retry);
+
         QCoreApplication::exit();
 
     }
@@ -117,6 +117,9 @@ void communications::readState()
                               tr("Game finished"),
                               tr("White wins!"),
                               QMessageBox::Retry);
+        /*QString program = "/home/dam/Desktop/Retele/SAH/build-client_sah-Desktop_Qt_6_6_1_GCC_64bit-Debug/client_sah";
+        QProcess process;
+        process.start(program);*/
         QCoreApplication::exit();
 
     }
