@@ -12,7 +12,8 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    comm = new communications("192.168.1.104", 27182, (int*)board, parent);
+    setAcceptDrops(true);
+    comm = new communications("10.20.0.179", 27182, (int*)board, parent);
     connect(comm, SIGNAL(startGame()), this, SLOT(startPlay()));
     connect(comm, SIGNAL(boardUpdate()), this, SLOT(yourTurn()));
     connect(comm, SIGNAL(closeGame()), this, SLOT(showWinner()));
