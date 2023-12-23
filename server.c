@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <poll.h>
 /* portul folosit */
 
 #define PORT 27182
@@ -124,6 +125,22 @@ void delete_room(int room_number)
     }
 }
 
+int is_fd_inactive(int fd)
+{
+    struct pollfd fds[1];
+    fds[0].fd = fd;
+    fds[0].events = POLLIN;
+
+    
+    int ret = poll(fds,1,0);  
+    if(ret == -1)
+    {
+        return 0;
+    }
+
+    return ret > 0;
+}
+
 /* functie de convertire a adresei IP a clientului in sir de caractere */
 char *conv_addr(struct sockaddr_in address)
 {
@@ -200,12 +217,12 @@ int main()
 
     printf("[server] Asteptam la portul %d...\n", PORT);
     fflush(stdout);
-
+    bcopy((char *)&actfds, (char *)&readfds, sizeof(readfds));
     /* servim in mod concurent (!?) clientii... */
     while (1)
     {
         /* ajustam multimea descriptorilor activi (efectiv utilizati) */
-        bcopy((char *)&actfds, (char *)&readfds, sizeof(readfds));
+        
 
         /* apelul select() */
         if (select(nfds + 1, &readfds, NULL, NULL, &tv) < 0)
@@ -244,7 +261,24 @@ int main()
         struct game_rooms *t = first;
         while (t != NULL)
         {
-            if (t->p1 != -1 && t->p2 != -1 && FD_ISSET(t->p1, &readfds) && FD_ISSET(t->p2, &readfds))
+            if(t->p1 != -1 && t->p2 == -1 && FD_ISSET(t->p1, &readfds))
+            { 
+                if(is_fd_inactive(t->p1))
+                {
+                    FD_CLR(t->p1, &actfds);
+                    FD_CLR(t->p2, &actfds);
+                    delete_room(t->order_number);
+                }
+            }
+            else if(t->p1 == -1 && t->p2 != -1 && FD_ISSET(t->p2, &readfds))
+            {
+                if(is_fd_inactive(t->p2))
+                {
+                    FD_CLR(t->p1, &actfds);
+                    FD_CLR(t->p2, &actfds);
+                    delete_room(t->order_number);
+                }
+            } else if (t->p1 != -1 && t->p2 != -1 && FD_ISSET(t->p1, &readfds) && FD_ISSET(t->p2, &readfds))
             {
                 pid_t child = fork();
                 if (child < 0)
