@@ -7,13 +7,13 @@
 
 #include "mainwindow.h"
 #include "communications.h"
-
+//10.20.0.1
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setAcceptDrops(true);
-    comm = new communications("10.20.0.179", 27182, (int*)board, parent);
+    comm = new communications(LOCAL_IP, 27182, (int*)board, parent);
     connect(comm, SIGNAL(startGame()), this, SLOT(startPlay()));
     connect(comm, SIGNAL(boardUpdate()), this, SLOT(yourTurn()));
     connect(comm, SIGNAL(closeGame()), this, SLOT(showWinner()));
@@ -212,11 +212,12 @@ void MainWindow::dropEvent(QDropEvent *event)
     }
 
     qDebug("DROP %d from (%d,%d) to (%d,%d)", piece, y1, x1, y2, x2);
+    int old_piece = board[y2][x2] ;
     board[y2][x2] = piece;
     update();
     event->setDropAction(Qt::MoveAction);
     event->accept();
-    comm->send(0,y1, x1, y2, x2, " ");
+    comm->send(0,y1, x1, y2, x2, old_piece);
     myTurn = false;
 }
 

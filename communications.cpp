@@ -72,7 +72,7 @@ void communications::readMove()
     {
         int x1, y1, x2, y2;
     } move;
-    int piece = 0;
+    int piece = NOPIECE;
     if(read(sd, &move, sizeof(int)*4) <= 0)
     {
         QMessageBox::critical((QWidget*)parent(),
@@ -82,12 +82,11 @@ void communications::readMove()
         QCoreApplication::exit();
     }
     piece = board[move.x1*8+move.y1];
-    board[move.x1*8+move.y1] = 0;
+    board[move.x1*8+move.y1] = NOPIECE;
     board[move.x2*8+move.y2] = piece;
     qDebug("MOVE read: %d %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
 
     emit boardUpdate();
-
 }
 void communications::readState()
 {
@@ -111,19 +110,16 @@ void communications::readState()
         QCoreApplication::exit();
 
     }
-    if (state == WHITEW)
+    if (state == WHITE_WIN)
     {
         QMessageBox::information((QWidget*)parent(),
                               tr("Game finished"),
                               tr("White wins!"),
                               QMessageBox::Retry);
-        /*QString program = "/home/dam/Desktop/Retele/SAH/build-client_sah-Desktop_Qt_6_6_1_GCC_64bit-Debug/client_sah";
-        QProcess process;
-        process.start(program);*/
         QCoreApplication::exit();
 
     }
-    if (state == BLACKW)
+    if (state == BLACK_WIN)
     {
         QMessageBox::information((QWidget*)parent(),
                               tr("Game finished"),
@@ -140,6 +136,30 @@ void communications::readState()
     }
     return;
 }
+
+
+void communications::rollback()
+{
+    struct
+    {
+        int x1, y1, x2, y2;
+    } move;
+    if(read(sd, &move, sizeof(int)*4) <= 0)
+    {
+        QMessageBox::critical((QWidget*)parent(),
+                              tr("Conenction Error"),
+                              tr("Couldn't receive my number"),
+                              QMessageBox::Ok);
+        QCoreApplication::exit();
+    }
+    int piece = board[move.x2*8+move.y2];
+    board[move.x1*8+move.y1] = piece;
+    board[move.x2*8+move.y2] = ex_piece;
+    qDebug("ROLLBACK read: %d %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
+
+    emit boardUpdate();
+}
+
 void communications::run()
 {
     while (1 /*game not finished*/)
@@ -156,31 +176,14 @@ void communications::run()
     }
 }
 
-void communications::send(int messageId, int x1, int y1, int x2, int y2, QString msg)
+void communications::send(int messageId, int x1, int y1, int x2, int y2, int piece)
 {
+    ex_piece = piece;
     int command[4];		// mesajul trimis
     command[0] = x1;
     command[1] = y1;
     command[2] = x2;
     command[3] = y2;
-    /*if (write(sd, messageId, sizeof(int)*2) <= 0)
-    {
-        QMessageBox::critical((QWidget*)parent(),
-                              tr("Transmission Error"),
-                              tr("Couldn't send message %1").arg(messageId),
-                              QMessageBox::Ok);
-        QCoreApplication::exit();
-    }
-    /*printf("message? %s", msg);
-    if(msg!=null)
-    {
-        if (write(sd, command, sizeof(msg)) <= 0)
-        {
-            QMessageBox::critical((QWidget*)parent(),
-                                  tr("Transmission Error"),
-                                  tr("Couldn't send message %1").arg(messageId),
-                                  QMessageBox::Ok);
-    }*/
     if (write(sd, command, sizeof(int)*4) <= 0)
     {
         QMessageBox::critical((QWidget*)parent(),
@@ -197,17 +200,25 @@ bool communications::receive()
     {
         return false;
     }
-    if (!begun && message_id == CLIENT_ID)
+    switch(message_id)
     {
-        readSide();
-    }
-    if (message_id == STATE)
-    {
-        readState();
-    }
-    if (message_id == MOVE)
-    {
-        readMove();
+        case CLIENT_ID:
+            if (!begun)
+            {
+                readSide();
+            }
+            break;
+        case STATE:
+            readState();
+            break;
+        case MOVE:
+            readMove();
+            break;
+        case WRONG_MOVE:
+            rollback();
+            break;
+        default:
+            return false;
     }
     return true;
 }
