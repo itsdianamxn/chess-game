@@ -26,6 +26,10 @@
 #define WHITE 1
 #define BLACK -1
 
+#define WHITE_CHECK 1
+#define BLACK_CHECK -1
+#define DOUBLE_CHECK 2
+
 #define ROOK 1
 #define KNIGHT 2
 #define BISHOP 3
@@ -354,6 +358,157 @@ int is_game_finished(int game_board[8][8], int moves[4], int side)
     }
     return 0;
 }
+void update_check_value(int i, int j, int check_board[8][8], int side)
+{
+    if (!(i < 0 || i > 7 || j < 0 || j > 7))
+    {
+        if (!check_board[i][j])
+            check_board[i][j] = side;
+        else if (check_board[i][j] != side)
+            check_board[i][j] = DOUBLE_CHECK;
+    }
+}
+
+void update_check_rook(int i, int j, int check_board[8][8], int game_board[8][8], int side)
+{
+    if (i != 7)
+    {
+        for (int k = i + 1; k < 8; k++)
+        {
+            update_check_value(k, j, check_board, side);
+            if (game_board[k][j])
+                break;
+        }
+    }
+    if (i != 0)
+    {
+        for (int k = i - 1; k >= 0; k--)
+        {
+            update_check_value(k, j, check_board, side);
+            if (game_board[k][j])
+                break;
+        }
+    }
+    if (j != 7)
+    {
+        for (int k = j + 1; k < 8; k++)
+        {
+            update_check_value(i, k, check_board, side);
+            if (game_board[i][k])
+                break;
+        }
+    }
+    if (j != 0)
+    {
+        for (int k = j - 1; k >= 0; k--)
+        {
+            update_check_value(i, k, check_board, side);
+            if (game_board[i][k])
+                break;
+        }
+    }
+}
+
+void update_check_knight(int i, int j, int check_board[8][8], int game_board[8][8], int side)
+{
+    update_check_value(i + 2, j + 1, check_board, side);
+    update_check_value(i + 2, j - 1, check_board, side);
+    update_check_value(i - 2, j + 1, check_board, side);
+    update_check_value(i - 2, j - 1, check_board, side);
+    update_check_value(i + 1, j + 2, check_board, side);
+    update_check_value(i + 1, j - 2, check_board, side);
+    update_check_value(i - 1, j + 2, check_board, side);
+    update_check_value(i - 1, j - 2, check_board, side);
+}
+
+void update_check_bishop(int i, int j, int check_board[8][8], int game_board[8][8], int side)
+{
+    for (int x = i + 1, y = j + 1; x < 8, y < 8; x++, y++)
+    {
+        update_check_value(x, y, check_board, side);
+        if (game_board[x][y])
+            break;
+    }
+    for (int x = i + 1, y = j - 1; x < 8, y >= 0; x++, y--)
+    {
+        update_check_value(x, y, check_board, side);
+        if (game_board[x][y])
+            break;
+    }
+    for (int x = i - 1, y = j + 1; x >= 0, y < 8; x--, y++)
+    {
+        update_check_value(x, y, check_board, side);
+        if (game_board[x][y])
+            break;
+    }
+    for (int x = i - 1, y = j - 1; x >= 0, y >= 0; x--, y--)
+    {
+        update_check_value(x, y, check_board, side);
+        if (game_board[x][y])
+            break;
+    }
+}
+
+void update_check_king(int i, int j, int check_board[8][8], int game_board[8][8], int side)
+{
+    update_check_value(i+1,j,check_board,side);
+    update_check_value(i+1,j-1,check_board,side);
+    update_check_value(i+1,j+1,check_board,side);
+    update_check_value(i-1,j,check_board,side);
+    update_check_value(i-1,j+1,check_board,side);
+    update_check_value(i-1,j-1,check_board,side);
+    update_check_value(i,j+1,check_board,side);
+    update_check_value(i,j-1,check_board,side);
+}
+
+void update_check_pawn(int i, int j, int check_board[8][8], int game_board[8][8], int side)
+{
+    if(side == BLACK)
+    {
+        update_check_value(i-1,j-1,check_board,side);
+        update_check_value(i-1,j+1,check_board,side);
+    }
+    else
+    {
+        update_check_value(i+1,j-1,check_board,side);
+        update_check_value(i+1,j+1,check_board,side);
+    }
+}
+
+void update_check_board(int game_board[8][8], int check_board[8][8])
+{
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (!game_board[i][j])
+                continue;
+            int side = game_board[i][j] < 0 ? -1 : 1;
+            switch (abs(game_board[i][j]))
+            {
+            case ROOK:
+                update_check_rook(i, j, check_board, game_board, side);
+                break;
+            case KNIGHT:
+                update_check_knight(i, j, check_board, game_board, side);
+                break;
+            case BISHOP:
+                update_check_bishop(i, j, check_board, game_board, side);
+                break;
+            case QUEEN:
+                update_check_bishop(i, j, check_board, game_board, side);
+                update_check_rook(i, j, check_board, game_board, side);
+                break;
+            case KING:
+                update_check_king(i,j,check_board, game_board,side);
+                break;
+            case PAWN:
+                update_check_pawn(i,j,check_board, game_board,side);
+                break;
+            }
+        }
+    }
+}
 
 bool is_rook_move_legal(int game_board[8][8], int moves[4], int side)
 {
@@ -567,6 +722,7 @@ int game(int fd1, int fd2)
     }
     printf("[server] Side BLACK succesfully sent to %d. \n", fd2);
 
+    int check_board[8][8] = {0};
     int game_board[8][8] = {
         -1,
         -2,
@@ -633,7 +789,13 @@ int game(int fd1, int fd2)
         2,
         1,
     };
-
+    update_check_board(game_board, check_board);
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+            printf("%d,", check_board[i][j]);
+        printf("\n");
+    }
     int state;
     while (1)
     {
