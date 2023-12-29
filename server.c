@@ -544,6 +544,7 @@ bool is_rook_move_legal(int game_board[8][8], int moves[4], int side)
     }
     else
         return false;
+    return true;
 }
 
 bool is_knight_move_legal(int game_board[8][8], int moves[4], int side)
