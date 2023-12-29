@@ -28,7 +28,8 @@ protected:
 
 private:
     int port;       // portul de conectare la server
-    int sd;			// descriptorul de socket
+    int sd = 0;		// descriptorul de socket
+    char* serverIp = nullptr;
     int* board;
     bool first;
     bool begun = false;
@@ -43,6 +44,7 @@ signals:
     void startGame();
     void boardUpdate();
     void closeGame();
+    void serverNotification(int type, const QString& title, const QString& msg, int buttons);
 };
 
 #endif // COMMUNICATIONS_H
