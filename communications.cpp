@@ -102,7 +102,7 @@ void communications::rollback()
     int piece = board[move.x2*8+move.y2];
     board[move.x1*8+move.y1] = piece;
     board[move.x2*8+move.y2] = ex_piece;
-    qDebug("ROLLBACK read: %s %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
+   // qDebug("ROLLBACK read: %s %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
 
     emit serverNotification(QMessageBox::Warning, tr("Invalid move!"), tr("The server rejected this move."), QMessageBox::Ok);
     emit boardUpdate();
