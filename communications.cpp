@@ -108,6 +108,25 @@ void communications::rollback()
     emit boardUpdate();
 }
 
+void communications::inCheck()
+{
+    struct
+    {
+        int x1, y1, x2, y2;
+    } move;
+    if (read(sd, &move, sizeof(int)*4) <= 0)
+    {
+        emit serverNotification(QMessageBox::Critical, tr("Conenction Error"), tr("Couldn't receive rollbck message"), QMessageBox::Ok);
+        return;
+    }
+    int piece = board[move.x2*8+move.y2];
+    board[move.x1*8+move.y1] = piece;
+    board[move.x2*8+move.y2] = ex_piece;
+
+    emit serverNotification(QMessageBox::Warning, tr("Invalid move!"), tr("Your king is in Check."), QMessageBox::Ok);
+    emit boardUpdate();
+}
+
 void communications::run()
 {
     struct sockaddr_in server;	// structura folosita pentru conectare
@@ -185,6 +204,8 @@ bool communications::receive()
             break;
         case WRONG_MOVE:
             rollback();
+        case IN_CHECK:
+            inCheck();
             break;
         default:
             return false;

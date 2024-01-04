@@ -8,6 +8,7 @@
 #define STATE           20
 #define MOVE            30
 #define WRONG_MOVE      40
+#define IN_CHECK        50
 #define P_DISCONNECTED  0
 #define WHITE_WIN       1
 #define DRAW            2
@@ -39,6 +40,7 @@ private:
     void readState();
     void readSide();
     void rollback();
+    void inCheck();
 
 signals:
     void startGame();
