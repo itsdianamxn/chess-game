@@ -1195,12 +1195,6 @@ int game(int fd1, int fd2)
 
     update_check_board(game_board, check_board);
 
-    for (int i = 0; i < 8; i++)
-    {
-        for (int j = 0; j < 8; j++)
-            printf("%d,", check_board[i][j]);
-        printf("\n");
-    }
     int state;
     while (1)
     {
@@ -1255,15 +1249,26 @@ int game(int fd1, int fd2)
             if (piece_moved * WHITE > 0 && buffer[2] == 0)
                 game_board[buffer[2]][buffer[3]] = QUEEN * WHITE;
         }
+        else if(abs(piece_moved) == KING)
+        {
+            if(is_castling_move(game_board,buffer,WHITE))
+            {
+                if(buffer[3] == 6)
+                {
+                    game_board[7][5] == ROOK * WHITE;
+                    game_board[7][7] == 0;
+                }
+                else
+                {
+                    game_board[7][3] == ROOK * WHITE;
+                    game_board[7][0] == 0;
+                }
+            }
+        }
         update_check_board(game_board, check_board);
         state = get_game_state(game_board, check_board, BLACK);
 
-        // for (int i = 0; i < 8; i++)
-        // {
-        //     for (int j = 0; j < 8; j++)
-        //         printf("%d,", check_board[i][j]);
-        //     printf("\n");
-        // }
+        
         if (sendMessage(fd2, MOVE, buffer, sizeof(buffer)))
         {
             endGame(fd2, fd1, DISCONNECTED);
@@ -1326,6 +1331,22 @@ int game(int fd1, int fd2)
         {
             if (piece_moved * BLACK > 0 && buffer[2] == 7)
                 game_board[buffer[2]][buffer[3]] = QUEEN * BLACK;
+        }
+        else if(abs(piece_moved) == KING)
+        {
+            if(is_castling_move(game_board,buffer,BLACK))
+            {
+                if(buffer[3] == 6)
+                {
+                    game_board[0][5] == ROOK * BLACK;
+                    game_board[0][7] == 0;
+                }
+                else
+                {
+                    game_board[0][3] == ROOK * BLACK;
+                    game_board[0][0] == 0;
+                }
+            }
         }
         update_check_board(game_board, check_board);
         state = get_game_state(game_board, check_board, WHITE);
