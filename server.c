@@ -676,24 +676,23 @@ bool check_if_there_is_check(int game_board[8][8], int check_board[8][8], int mo
                     return true;
             }
     }
-    
 }
 
 bool is_castling_move(int game_board[8][8], int moves[4], int side)
 {
-    if(side == WHITE)
+    if (side == WHITE)
     {
-        if(moves[0] == 7 && moves[1] == 4 && moves[2] == 7)
+        if (moves[0] == 7 && moves[1] == 4 && moves[2] == 7)
         {
-            if(moves[3] == 6 || moves[3] == 2)
+            if (moves[3] == 6 || moves[3] == 2)
                 return true;
         }
     }
     else
     {
-        if(moves[0] == 0 && moves[1] == 4 && moves[2] == 0)
+        if (moves[0] == 0 && moves[1] == 4 && moves[2] == 0)
         {
-            if(moves[3] == 6 || moves[3] == 2)
+            if (moves[3] == 6 || moves[3] == 2)
                 return true;
         }
     }
@@ -702,18 +701,18 @@ bool is_castling_move(int game_board[8][8], int moves[4], int side)
 
 bool is_castling_legal(int game_board[8][8], int check_board[8][8], int moves[4], int side)
 {
-    if(side == WHITE)
+    if (side == WHITE)
     {
-        if(moves[3] == 6 && (check_board[7][5] == 0 || check_board[7][5] == WHITE_CHECK) && game_board[7][7] == ROOK * WHITE)
+        if (moves[3] == 6 && (check_board[7][5] == 0 || check_board[7][5] == WHITE_CHECK) && game_board[7][7] == ROOK * WHITE)
             return true;
-        if(moves[3] == 2 && (check_board[7][3] == 0 || check_board[7][3] == WHITE_CHECK) && game_board[7][0] == ROOK * WHITE)
+        if (moves[3] == 2 && (check_board[7][3] == 0 || check_board[7][3] == WHITE_CHECK) && game_board[7][0] == ROOK * WHITE)
             return true;
     }
     else
     {
-        if(moves[3] == 6 && (check_board[0][5] == 0 || check_board[0][5] == BLACK_CHECK) && game_board[0][7] == ROOK * BLACK)
+        if (moves[3] == 6 && (check_board[0][5] == 0 || check_board[0][5] == BLACK_CHECK) && game_board[0][7] == ROOK * BLACK)
             return true;
-        if(moves[3] == 2 && (check_board[0][3] == 0 || check_board[0][3] == BLACK_CHECK) && game_board[0][0] == ROOK * BLACK)
+        if (moves[3] == 2 && (check_board[0][3] == 0 || check_board[0][3] == BLACK_CHECK) && game_board[0][0] == ROOK * BLACK)
             return true;
     }
     return false;
@@ -725,8 +724,8 @@ bool is_move_legal(int game_board[8][8], int check_board[8][8], int moves[4], in
         return false;
     if (game_board[moves[2]][moves[3]] * side > 0) // check if the piece is trying to eat it's own kind
         return false;
-    if(moves[2] < 0 || moves[2] > 7 || moves[3] < 0 || moves[3] > 7)
-        return false;    
+    if (moves[2] < 0 || moves[2] > 7 || moves[3] < 0 || moves[3] > 7)
+        return false;
 
     if (!check_if_there_is_check(game_board, check_board, moves, side))
         return false;
@@ -758,7 +757,6 @@ bool is_move_legal(int game_board[8][8], int check_board[8][8], int moves[4], in
     }
     return false;
 }
-
 
 bool check_rook_moves(int game_board[8][8], int check_board[8][8], int i, int j, int side)
 {
@@ -847,40 +845,40 @@ bool check_bishop_moves(int game_board[8][8], int check_board[8][8], int i, int 
     int moves[4];
     moves[0] = i;
     moves[1] = j;
-    for(int x = i-1, y = j-1; x >=0 , y>=0; x--,y--)
+    for (int x = i - 1, y = j - 1; x >= 0, y >= 0; x--, y--)
     {
         moves[2] = x;
         moves[3] = y;
-        if(is_move_legal(game_board,check_board,moves,side))
+        if (is_move_legal(game_board, check_board, moves, side))
             return true;
-        if(game_board[x][y])
+        if (game_board[x][y])
             break;
     }
-    for(int x = i-1, y = j+1; x >=0 , y<8; x--,y++)
+    for (int x = i - 1, y = j + 1; x >= 0, y < 8; x--, y++)
     {
         moves[2] = x;
         moves[3] = y;
-        if(is_move_legal(game_board,check_board,moves,side))
+        if (is_move_legal(game_board, check_board, moves, side))
             return true;
-        if(game_board[x][y])
+        if (game_board[x][y])
             break;
     }
-    for(int x = i+1, y = j-1; x <8 , y>=0; x++,y--)
+    for (int x = i + 1, y = j - 1; x < 8, y >= 0; x++, y--)
     {
         moves[2] = x;
         moves[3] = y;
-        if(is_move_legal(game_board,check_board,moves,side))
+        if (is_move_legal(game_board, check_board, moves, side))
             return true;
-        if(game_board[x][y])
+        if (game_board[x][y])
             break;
     }
-    for(int x = i+1, y = j+1; x < 8, y < 8; x++,y++)
+    for (int x = i + 1, y = j + 1; x < 8, y < 8; x++, y++)
     {
         moves[2] = x;
         moves[3] = y;
-        if(is_move_legal(game_board,check_board,moves,side))
+        if (is_move_legal(game_board, check_board, moves, side))
             return true;
-        if(game_board[x][y])
+        if (game_board[x][y])
             break;
     }
     return false;
@@ -892,40 +890,39 @@ bool check_king_moves(int game_board[8][8], int check_board[8][8], int i, int j,
     moves[0] = i;
     moves[1] = j;
 
-    moves[2] = i+1;
-    moves[3] = j+1;
-    if(is_move_legal(game_board,check_board,moves,side))
+    moves[2] = i + 1;
+    moves[3] = j + 1;
+    if (is_move_legal(game_board, check_board, moves, side))
         return true;
-    moves[2] = i+1;
-    moves[3] = j-1;
-    if(is_move_legal(game_board,check_board,moves,side))
+    moves[2] = i + 1;
+    moves[3] = j - 1;
+    if (is_move_legal(game_board, check_board, moves, side))
         return true;
-    moves[2] = i+1;
+    moves[2] = i + 1;
     moves[3] = j;
-    if(is_move_legal(game_board,check_board,moves,side))
+    if (is_move_legal(game_board, check_board, moves, side))
         return true;
-    moves[2] = i-1;
-    moves[3] = j+1;
-    if(is_move_legal(game_board,check_board,moves,side))
+    moves[2] = i - 1;
+    moves[3] = j + 1;
+    if (is_move_legal(game_board, check_board, moves, side))
         return true;
-    moves[2] = i-1;
+    moves[2] = i - 1;
     moves[3] = j;
-    if(is_move_legal(game_board,check_board,moves,side))
+    if (is_move_legal(game_board, check_board, moves, side))
         return true;
-    moves[2] = i-1;
-    moves[3] = j-1;
-    if(is_move_legal(game_board,check_board,moves,side))
+    moves[2] = i - 1;
+    moves[3] = j - 1;
+    if (is_move_legal(game_board, check_board, moves, side))
         return true;
     moves[2] = i;
-    moves[3] = j+1;
-    if(is_move_legal(game_board,check_board,moves,side))
+    moves[3] = j + 1;
+    if (is_move_legal(game_board, check_board, moves, side))
         return true;
     moves[2] = i;
-    moves[3] = j-1;
-    if(is_move_legal(game_board,check_board,moves,side))
+    moves[3] = j - 1;
+    if (is_move_legal(game_board, check_board, moves, side))
         return true;
     return false;
-    
 }
 
 bool check_pawn_moves(int game_board[8][8], int check_board[8][8], int i, int j, int side)
@@ -933,59 +930,61 @@ bool check_pawn_moves(int game_board[8][8], int check_board[8][8], int i, int j,
     int moves[4];
     moves[0] = i;
     moves[1] = j;
-    if(side == WHITE)
+    if (side == WHITE)
     {
-        moves[2] = i-1;
+        moves[2] = i - 1;
         moves[3] = j;
-        if(is_move_legal(game_board,check_board,moves,side))
+        if (is_move_legal(game_board, check_board, moves, side))
             return true;
-        
-        if(i == 6){
-        moves[2] = i-2;
-        moves[3] = j;
-        if(is_move_legal(game_board,check_board,moves,side))
-            return true;
-        }
-        if(game_board[i-1][j-1] * side < 0)
+
+        if (i == 6)
         {
-            moves[2] = i-1;
-            moves[3] = j-1;
-            if(is_move_legal(game_board,check_board,moves,side))
+            moves[2] = i - 2;
+            moves[3] = j;
+            if (is_move_legal(game_board, check_board, moves, side))
                 return true;
         }
-        if(game_board[i-1][j+1] * side < 0)
+        if (game_board[i - 1][j - 1] * side < 0)
         {
-            moves[2] = i-1;
-            moves[3] = j+1;
-            if(is_move_legal(game_board,check_board,moves,side))
+            moves[2] = i - 1;
+            moves[3] = j - 1;
+            if (is_move_legal(game_board, check_board, moves, side))
+                return true;
+        }
+        if (game_board[i - 1][j + 1] * side < 0)
+        {
+            moves[2] = i - 1;
+            moves[3] = j + 1;
+            if (is_move_legal(game_board, check_board, moves, side))
                 return true;
         }
     }
     else
     {
-        moves[2] = i+1;
+        moves[2] = i + 1;
         moves[3] = j;
-        if(is_move_legal(game_board,check_board,moves,side))
+        if (is_move_legal(game_board, check_board, moves, side))
             return true;
-        
-        if(i == 1){
-        moves[2] = i+2;
-        moves[3] = j;
-        if(is_move_legal(game_board,check_board,moves,side))
-            return true;
-        }
-        if(game_board[i+1][j-1] * side < 0)
+
+        if (i == 1)
         {
-            moves[2] = i+1;
-            moves[3] = j-1;
-            if(is_move_legal(game_board,check_board,moves,side))
+            moves[2] = i + 2;
+            moves[3] = j;
+            if (is_move_legal(game_board, check_board, moves, side))
                 return true;
         }
-        if(game_board[i+1][j+1] * side < 0)
+        if (game_board[i + 1][j - 1] * side < 0)
         {
-            moves[2] = i+1;
-            moves[3] = j+1;
-            if(is_move_legal(game_board,check_board,moves,side))
+            moves[2] = i + 1;
+            moves[3] = j - 1;
+            if (is_move_legal(game_board, check_board, moves, side))
+                return true;
+        }
+        if (game_board[i + 1][j + 1] * side < 0)
+        {
+            moves[2] = i + 1;
+            moves[3] = j + 1;
+            if (is_move_legal(game_board, check_board, moves, side))
                 return true;
         }
     }
@@ -1000,7 +999,7 @@ int is_game_finished(int game_board[8][8], int check_board[8][8], int side)
             if (game_board[i][j] * side <= 0)
                 continue;
             if (game_board[i][j] * side > 0)
-            { 
+            {
                 int moves[4];
                 moves[0] = i;
                 moves[1] = j;
@@ -1008,50 +1007,50 @@ int is_game_finished(int game_board[8][8], int check_board[8][8], int side)
                 {
                 case ROOK:
                     if (check_rook_moves(game_board, check_board, i, j, side))
-                        {
-                            printf("MOVE FOUND! Side: %d, Piece: %d\n",side,game_board[i][j]);
-                            return true;
-                        }
+                    {
+                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
+                        return true;
+                    }
                     break;
                 case KNIGHT:
-                    if(check_knight_moves(game_board,check_board,i,j,side))
-                        {
-                            printf("MOVE FOUND! Side: %d, Piece: %d\n",side,game_board[i][j]);
-                            return true;
-                        }
+                    if (check_knight_moves(game_board, check_board, i, j, side))
+                    {
+                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
+                        return true;
+                    }
                     break;
                 case BISHOP:
-                    if(check_bishop_moves(game_board,check_board,i,j,side))
-                        {
-                            printf("MOVE FOUND! Side: %d, Piece: %d\n",side,game_board[i][j]);
-                            return true;
-                        }
+                    if (check_bishop_moves(game_board, check_board, i, j, side))
+                    {
+                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
+                        return true;
+                    }
                     break;
                 case QUEEN:
-                    if(check_bishop_moves(game_board, check_board, i,j,side))
-                        {
-                            printf("MOVE FOUND! Side: %d, Piece: %d\n",side,game_board[i][j]);
-                            return true;
-                        }
-                    if(check_rook_moves(game_board,check_board,i,j,side))
-                        {
-                            printf("MOVE FOUND! Side: %d, Piece: %d\n",side,game_board[i][j]);
-                            return true;
-                        }
+                    if (check_bishop_moves(game_board, check_board, i, j, side))
+                    {
+                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
+                        return true;
+                    }
+                    if (check_rook_moves(game_board, check_board, i, j, side))
+                    {
+                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
+                        return true;
+                    }
                     break;
                 case KING:
-                    if(check_king_moves(game_board,check_board,i,j,side))
-                        {
-                            printf("MOVE FOUND! Side: %d, Piece: %d\n",side,game_board[i][j]);
-                            return true;
-                        }
+                    if (check_king_moves(game_board, check_board, i, j, side))
+                    {
+                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
+                        return true;
+                    }
                     break;
                 case PAWN:
-                    if(check_pawn_moves(game_board,check_board,i,j,side))
-                        {
-                            printf("MOVE FOUND! Side: %d, Piece: %d\n",side,game_board[i][j]);
-                            return true;
-                        }
+                    if (check_pawn_moves(game_board, check_board, i, j, side))
+                    {
+                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
+                        return true;
+                    }
                     break;
                 default:
                     break;
@@ -1064,31 +1063,30 @@ int is_game_finished(int game_board[8][8], int check_board[8][8], int side)
 int get_game_state(int game_board[8][8], int check_board[8][8], int side)
 {
     int state = is_game_finished(game_board, check_board, side);
-    if(state == true)
+    if (state == true)
         return GAME_GOING;
     else
     {
-        for(int i = 0; i < 8; i++)
+        for (int i = 0; i < 8; i++)
         {
-            for(int j = 0; j < 8; j++)
+            for (int j = 0; j < 8; j++)
+            {
+                if (game_board[i][j] == KING * side)
                 {
-                    if(game_board[i][j] == KING * side)
+                    if (check_board[i][j] == side * -1 || check_board[i][j] == 2)
                     {
-                        if(check_board[i][j] == side * -1 || check_board[i][j] == 2)
-                            {
-                                if(side == WHITE)
-                                    return BLACKW;
-                                else
-                                    return WHITEW;
-                            }
+                        if (side == WHITE)
+                            return BLACKW;
                         else
-                            return DRAW;
+                            return WHITEW;
                     }
+                    else
+                        return DRAW;
                 }
+            }
         }
     }
 }
-
 
 void endGame(int loser_fd, int winner_fd, int state)
 {
@@ -1222,18 +1220,19 @@ int game(int fd1, int fd2)
         // printf("is_move_legal: %d and piece: %d\n", legal, game_board[buffer[0]][buffer[1]]);
         while (!legal)
         {
-            if(check_if_there_is_check(game_board,check_board,buffer,WHITE))
+            if (check_if_there_is_check(game_board, check_board, buffer, WHITE))
+            {
                 if (sendMessage(fd1, WRONG_MOVE, buffer, sizeof(buffer)))
                 {
                     endGame(fd1, fd2, DISCONNECTED);
                     return BLACKW;
                 }
-            else
-                if (sendMessage(fd1, WRONG_MOVE_CHECK, buffer, sizeof(buffer)))
-                {
-                    endGame(fd1, fd2, DISCONNECTED);
-                    return BLACKW;
-                }
+            }
+            else if (sendMessage(fd1, WRONG_MOVE_CHECK, buffer, sizeof(buffer)))
+            {
+                endGame(fd1, fd2, DISCONNECTED);
+                return BLACKW;
+            }
             printf("Waiting on a move from client1: \n");
             /// read move from side 1
             bytes = read(fd1, buffer, sizeof(int) * 4);
@@ -1247,18 +1246,18 @@ int game(int fd1, int fd2)
             legal = is_move_legal(game_board, check_board, buffer, WHITE);
             printf("is_move_legal: %d\n", legal);
         }
-        
+
         int piece_moved = game_board[buffer[0]][buffer[1]];
         game_board[buffer[0]][buffer[1]] = 0;
         game_board[buffer[2]][buffer[3]] = piece_moved;
-        if(abs(piece_moved) == PAWN)
+        if (abs(piece_moved) == PAWN)
         {
-            if(piece_moved * WHITE > 0 && buffer[2] == 0)
+            if (piece_moved * WHITE > 0 && buffer[2] == 0)
                 game_board[buffer[2]][buffer[3]] = QUEEN * WHITE;
         }
         update_check_board(game_board, check_board);
         state = get_game_state(game_board, check_board, BLACK);
-        
+
         // for (int i = 0; i < 8; i++)
         // {
         //     for (int j = 0; j < 8; j++)
@@ -1271,7 +1270,7 @@ int game(int fd1, int fd2)
             return WHITEW;
         }
 
-        if (state!=GAME_GOING)
+        if (state != GAME_GOING)
         {
             if (sendMessage(fd1, GAME_STATE, &state, sizeof(state)))
             {
@@ -1296,18 +1295,19 @@ int game(int fd1, int fd2)
         printf("is_move_legal: %d\n", legal);
         while (!legal)
         {
-            if(check_if_there_is_check(game_board,check_board,buffer,BLACK))
-                if (sendMessage(fd1, WRONG_MOVE, buffer, sizeof(buffer)))
+            if (check_if_there_is_check(game_board, check_board, buffer, BLACK))
+            {
+                if (sendMessage(fd2, WRONG_MOVE, buffer, sizeof(buffer)))
                 {
-                    endGame(fd1, fd2, DISCONNECTED);
-                    return BLACKW;
+                    endGame(fd2, fd1, DISCONNECTED);
+                    return WHITEW;
                 }
-            else
-                if (sendMessage(fd1, WRONG_MOVE_CHECK, buffer, sizeof(buffer)))
-                {
-                    endGame(fd1, fd2, DISCONNECTED);
-                    return BLACKW;
-                }
+            }
+            else if (sendMessage(fd2, WRONG_MOVE_CHECK, buffer, sizeof(buffer)))
+            {
+                endGame(fd2, fd1, DISCONNECTED);
+                return WHITEW;
+            }
             printf("Waiting on a move from client2: \n");
             bytes = read(fd2, buffer, sizeof(int) * 4);
             if (bytes <= 0)
@@ -1318,18 +1318,17 @@ int game(int fd1, int fd2)
             legal = is_move_legal(game_board, check_board, buffer, BLACK);
             printf("is_move_legal: %d\n", legal);
         }
-        
+
         piece_moved = game_board[buffer[0]][buffer[1]];
         game_board[buffer[0]][buffer[1]] = 0;
         game_board[buffer[2]][buffer[3]] = piece_moved;
-        if(abs(piece_moved) == PAWN)
+        if (abs(piece_moved) == PAWN)
         {
-            if(piece_moved * BLACK > 0 && buffer[2] == 7)
+            if (piece_moved * BLACK > 0 && buffer[2] == 7)
                 game_board[buffer[2]][buffer[3]] = QUEEN * BLACK;
         }
         update_check_board(game_board, check_board);
         state = get_game_state(game_board, check_board, WHITE);
-        
 
         for (int i = 0; i < 8; i++)
         {
@@ -1342,7 +1341,7 @@ int game(int fd1, int fd2)
             endGame(fd1, fd2, DISCONNECTED);
             return BLACKW;
         }
-        if (state!=GAME_GOING)
+        if (state != GAME_GOING)
         {
             if (sendMessage(fd1, GAME_STATE, &state, sizeof(state)))
             {
