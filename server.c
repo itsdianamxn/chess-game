@@ -22,6 +22,7 @@
 #define GAME_STATE 20
 #define MOVE 30
 #define WRONG_MOVE 40
+#define WRONG_MOVE_CHECK 50
 
 #define WHITE 1
 #define BLACK -1
@@ -678,6 +679,46 @@ bool check_if_there_is_check(int game_board[8][8], int check_board[8][8], int mo
     
 }
 
+bool is_castling_move(int game_board[8][8], int moves[4], int side)
+{
+    if(side == WHITE)
+    {
+        if(moves[0] == 7 && moves[1] == 4 && moves[2] == 7)
+        {
+            if(moves[3] == 6 || moves[3] == 2)
+                return true;
+        }
+    }
+    else
+    {
+        if(moves[0] == 0 && moves[1] == 4 && moves[2] == 0)
+        {
+            if(moves[3] == 6 || moves[3] == 2)
+                return true;
+        }
+    }
+    return false;
+}
+
+bool is_castling_legal(int game_board[8][8], int check_board[8][8], int moves[4], int side)
+{
+    if(side == WHITE)
+    {
+        if(moves[3] == 6 && (check_board[7][5] == 0 || check_board[7][5] == WHITE_CHECK) && game_board[7][7] == ROOK * WHITE)
+            return true;
+        if(moves[3] == 2 && (check_board[7][3] == 0 || check_board[7][3] == WHITE_CHECK) && game_board[7][0] == ROOK * WHITE)
+            return true;
+    }
+    else
+    {
+        if(moves[3] == 6 && (check_board[0][5] == 0 || check_board[0][5] == BLACK_CHECK) && game_board[0][7] == ROOK * BLACK)
+            return true;
+        if(moves[3] == 2 && (check_board[0][3] == 0 || check_board[0][3] == BLACK_CHECK) && game_board[0][0] == ROOK * BLACK)
+            return true;
+    }
+    return false;
+}
+
 bool is_move_legal(int game_board[8][8], int check_board[8][8], int moves[4], int side) /// 0 - x_start, 1 - y_start , 2-x_fin, 3-y_fin
 {
     if (moves[0] == moves[2] && moves[1] == moves[3]) // check if the piece has not been moved
@@ -685,7 +726,8 @@ bool is_move_legal(int game_board[8][8], int check_board[8][8], int moves[4], in
     if (game_board[moves[2]][moves[3]] * side > 0) // check if the piece is trying to eat it's own kind
         return false;
     if(moves[2] < 0 || moves[2] > 7 || moves[3] < 0 || moves[3] > 7)
-        return false;
+        return false;    
+
     if (!check_if_there_is_check(game_board, check_board, moves, side))
         return false;
 
@@ -704,7 +746,10 @@ bool is_move_legal(int game_board[8][8], int check_board[8][8], int moves[4], in
         return is_queen_move_legal(game_board, moves, side);
 
     case KING:
-        return is_king_move_legal(game_board, moves, side);
+        if (is_castling_move(game_board, moves, side))
+            return is_castling_legal(game_board, check_board, moves, side);
+        else
+            return is_king_move_legal(game_board, moves, side);
 
     case PAWN:
         return is_pawn_move_legal(game_board, moves, side);
@@ -1177,11 +1222,18 @@ int game(int fd1, int fd2)
         // printf("is_move_legal: %d and piece: %d\n", legal, game_board[buffer[0]][buffer[1]]);
         while (!legal)
         {
-            if (sendMessage(fd1, WRONG_MOVE, buffer, sizeof(buffer)))
-            {
-                endGame(fd1, fd2, DISCONNECTED);
-                return BLACKW;
-            }
+            if(check_if_there_is_check(game_board,check_board,buffer,WHITE))
+                if (sendMessage(fd1, WRONG_MOVE, buffer, sizeof(buffer)))
+                {
+                    endGame(fd1, fd2, DISCONNECTED);
+                    return BLACKW;
+                }
+            else
+                if (sendMessage(fd1, WRONG_MOVE_CHECK, buffer, sizeof(buffer)))
+                {
+                    endGame(fd1, fd2, DISCONNECTED);
+                    return BLACKW;
+                }
             printf("Waiting on a move from client1: \n");
             /// read move from side 1
             bytes = read(fd1, buffer, sizeof(int) * 4);
@@ -1199,6 +1251,11 @@ int game(int fd1, int fd2)
         int piece_moved = game_board[buffer[0]][buffer[1]];
         game_board[buffer[0]][buffer[1]] = 0;
         game_board[buffer[2]][buffer[3]] = piece_moved;
+        if(abs(piece_moved) == PAWN)
+        {
+            if(piece_moved * WHITE > 0 && buffer[2] == 0)
+                game_board[buffer[2]][buffer[3]] = QUEEN * WHITE;
+        }
         update_check_board(game_board, check_board);
         state = get_game_state(game_board, check_board, BLACK);
         
@@ -1214,7 +1271,7 @@ int game(int fd1, int fd2)
             return WHITEW;
         }
 
-        if (state!=4)
+        if (state!=GAME_GOING)
         {
             if (sendMessage(fd1, GAME_STATE, &state, sizeof(state)))
             {
@@ -1239,11 +1296,18 @@ int game(int fd1, int fd2)
         printf("is_move_legal: %d\n", legal);
         while (!legal)
         {
-            if (sendMessage(fd2, WRONG_MOVE, buffer, sizeof(buffer)))
-            {
-                endGame(fd2, fd1, DISCONNECTED);
-                return WHITEW;
-            }
+            if(check_if_there_is_check(game_board,check_board,buffer,BLACK))
+                if (sendMessage(fd1, WRONG_MOVE, buffer, sizeof(buffer)))
+                {
+                    endGame(fd1, fd2, DISCONNECTED);
+                    return BLACKW;
+                }
+            else
+                if (sendMessage(fd1, WRONG_MOVE_CHECK, buffer, sizeof(buffer)))
+                {
+                    endGame(fd1, fd2, DISCONNECTED);
+                    return BLACKW;
+                }
             printf("Waiting on a move from client2: \n");
             bytes = read(fd2, buffer, sizeof(int) * 4);
             if (bytes <= 0)
@@ -1258,6 +1322,11 @@ int game(int fd1, int fd2)
         piece_moved = game_board[buffer[0]][buffer[1]];
         game_board[buffer[0]][buffer[1]] = 0;
         game_board[buffer[2]][buffer[3]] = piece_moved;
+        if(abs(piece_moved) == PAWN)
+        {
+            if(piece_moved * BLACK > 0 && buffer[2] == 7)
+                game_board[buffer[2]][buffer[3]] = QUEEN * BLACK;
+        }
         update_check_board(game_board, check_board);
         state = get_game_state(game_board, check_board, WHITE);
         
@@ -1273,7 +1342,7 @@ int game(int fd1, int fd2)
             endGame(fd1, fd2, DISCONNECTED);
             return BLACKW;
         }
-        if (state!=4)
+        if (state!=GAME_GOING)
         {
             if (sendMessage(fd1, GAME_STATE, &state, sizeof(state)))
             {
