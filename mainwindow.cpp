@@ -274,13 +274,21 @@ void MainWindow::dropEvent(QDropEvent *event)
         return; // put the piece back to its origin
     }
 
+    if (piece == (BLACK + PAWN) && y2 == 7)
+        piece = BLACK + QUEEN;
+    if (piece == (WHITE + PAWN) && y2 == 0)
+        piece = WHITE + QUEEN;
+
     qDebug("DROP '%s' from (%d,%d) to (%d,%d)", qPrintable(pieceName(piece)), y1, x1, y2, x2);
-    int old_piece = board[y2][x2] ;
+    int old_piece = board[y2][x2];
     board[y2][x2] = piece;
+    board[y1][x1] = NOPIECE;
     update();
+
     event->setDropAction(Qt::MoveAction);
     event->accept();
-    comm->send(0,y1, x1, y2, x2, old_piece);
+
+    comm->send(0, y1, x1, y2, x2, old_piece);
     myTurn = false;
 }
 
@@ -327,11 +335,12 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
     startDragY = y;
     update();
 
-    if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) == Qt::MoveAction) {
-        board[y][x] = NOPIECE;
-    } else {
+    if (drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction) != Qt::MoveAction)
+    {
+        // event aborted, restoring piece
         board[y][x] = -board[y][x];
     }
+    qDebug("drag execute");
     update();
 }
 
@@ -478,6 +487,14 @@ int MainWindow::is_valid_king(int x1, int y1, int x2, int y2)
 {
     if (abs(x1-x2)<=1 && abs(y1-y2) <= 1)
         return (board[x2][y2] == NOPIECE) ? MOVE_SIMPLE : MOVE_EAT;
+
+    // castling:
+    if (x1 == x2 && y1 == 4 && abs(y1-y2) == 2 &&
+        (getColor(board[x1][y1]) == WHITE && x1 == 7) ||
+        (getColor(board[x1][y1]) == BLACK && x1 == 0))
+    {
+        return MOVE_SIMPLE;
+    }
     return MOVE_NOPE;
 }
 

@@ -49,6 +49,10 @@ void communications::readMove()
     }
 
     piece = board[move.x1*8+move.y1];
+    if (piece == (BLACK + PAWN) && move.x2 == 7)
+        piece = BLACK + QUEEN;
+    if (piece == (WHITE + PAWN) && move.x2 == 0)
+        piece = WHITE + QUEEN;
     board[move.x1*8+move.y1] = NOPIECE;
     board[move.x2*8+move.y2] = piece;
     qDebug("MOVE read: %d %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
@@ -120,6 +124,8 @@ void communications::inCheck()
         return;
     }
     int piece = board[move.x2*8+move.y2];
+//    if (piece <= NOPIECE)
+        qDebug("invalid piece! %d %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
     board[move.x1*8+move.y1] = piece;
     board[move.x2*8+move.y2] = ex_piece;
 
