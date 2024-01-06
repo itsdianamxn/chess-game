@@ -11,7 +11,8 @@
 #include "mainwindow.h"
 #include "communications.h"
 //10.20.0.1
-
+#define CASTLING_RIGHT 90
+#define CASTLING_LEFT  91
 #define MOVE_SIMPLE 88
 #define MOVE_EAT    89
 #define MOVE_NOPE    0
@@ -196,7 +197,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
                 {
                     p.setOpacity(.33);
                     p.fillRect(margin+i*w, margin+j*w, w, w,
-                               QBrush(moveType == MOVE_SIMPLE ? Qt::green : Qt::red, Qt::SolidPattern));
+                               QBrush(moveType == MOVE_EAT ? Qt::red : Qt::green, Qt::SolidPattern));
                     if (moveType == MOVE_SIMPLE)
                         p.drawPixmap(margin+i*w, margin+j*w, w, w, pixes[dragPiece]);
                     p.setOpacity(1);
@@ -267,13 +268,15 @@ void MainWindow::dropEvent(QDropEvent *event)
     int piece, x1, y1;
     dataStream >> piece >> x1 >> y1;
 
-    if (x1==x2 && y1==y2 || !is_valid(y1, x1, y2, x2))
+    int valid_move = is_valid(y1, x1, y2, x2);
+    if (x1==x2 && y1==y2 || valid_move == MOVE_NOPE)
     {
         qDebug("Drag '%s' from (%d %d) to (%d %d) aborted because the move is invlid!", qPrintable(pieceName(piece)), x1, y1, x2, y2);
         event->ignore();
         return; // put the piece back to its origin
     }
 
+    //promotion (pawn to queen)
     if (piece == (BLACK + PAWN) && y2 == 7)
         piece = BLACK + QUEEN;
     if (piece == (WHITE + PAWN) && y2 == 0)
@@ -283,6 +286,18 @@ void MainWindow::dropEvent(QDropEvent *event)
     int old_piece = board[y2][x2];
     board[y2][x2] = piece;
     board[y1][x1] = NOPIECE;
+
+    //castling
+    if (valid_move == CASTLING_RIGHT)
+    {
+        board[y1][5] = ROOK + getColor(piece);
+        board[y1][7] = NOPIECE;
+    }
+    if (valid_move == CASTLING_LEFT)
+    {
+        board[y1][3] = ROOK + getColor(piece);
+        board[y1][0] = NOPIECE;
+    }
     update();
 
     event->setDropAction(Qt::MoveAction);
@@ -485,15 +500,36 @@ int MainWindow::is_valid_queen(int x1, int y1, int x2, int y2)
 
 int MainWindow::is_valid_king(int x1, int y1, int x2, int y2)
 {
+    int i;
     if (abs(x1-x2)<=1 && abs(y1-y2) <= 1)
         return (board[x2][y2] == NOPIECE) ? MOVE_SIMPLE : MOVE_EAT;
 
     // castling:
-    if (x1 == x2 && y1 == 4 && abs(y1-y2) == 2 &&
-        (getColor(board[x1][y1]) == WHITE && x1 == 7) ||
-        (getColor(board[x1][y1]) == BLACK && x1 == 0))
+    if (x1 == x2 && y1 == 4 && abs(y1-y2) == 2)
     {
-        return MOVE_SIMPLE;
+        int myColor = abs(getColor(board[x1][y1]));
+        if (y2 == 6)
+        {
+            for (i = y1 + 1; i < y2; i++)
+                if (board[x1][i] != NOPIECE)
+                    return MOVE_NOPE;
+            if (board[x1][7] != ROOK + myColor)
+                return MOVE_NOPE;
+        }
+        else if (y2 == 2)
+        {
+            for (i = y1 - 1; i >= y2-1; i--)
+                if (board[x1][i] != NOPIECE)
+                    return MOVE_NOPE;
+            if (board[x1][0] != ROOK + myColor)
+                return MOVE_NOPE;
+        }
+
+        if (myColor == BLACK && x1 == 0 ||
+            myColor == WHITE && x1 == 7)
+        {
+            return (y2==6) ? CASTLING_RIGHT : CASTLING_LEFT;
+        }
     }
     return MOVE_NOPE;
 }

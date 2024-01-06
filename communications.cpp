@@ -49,12 +49,32 @@ void communications::readMove()
     }
 
     piece = board[move.x1*8+move.y1];
+    // adjust for promotion (pawn to queen)
     if (piece == (BLACK + PAWN) && move.x2 == 7)
         piece = BLACK + QUEEN;
     if (piece == (WHITE + PAWN) && move.x2 == 0)
         piece = WHITE + QUEEN;
     board[move.x1*8+move.y1] = NOPIECE;
     board[move.x2*8+move.y2] = piece;
+
+    if (piece == BLACK + KING || piece == WHITE + KING)
+    {
+        if (abs(move.y1 - move.y2) == 2)
+        {
+            if (move.y2 == 6) // right castling
+            {
+                board[move.x2*8+move.y2-1] = board[move.x1*8+7];
+                board[move.x1*8+7] = NOPIECE;
+            }
+            else // y2 == 2, left castling
+            {
+                board[move.x2*8+move.y2+1] = board[move.x1*8+0];
+                board[move.x1*8+0] = NOPIECE;
+
+            }
+        }
+    }
+
     qDebug("MOVE read: %d %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
 
     emit boardUpdate();
@@ -123,9 +143,13 @@ void communications::inCheck()
         emit serverNotification(QMessageBox::Critical, tr("Conenction Error"), tr("Couldn't receive rollbck message"), QMessageBox::Ok);
         return;
     }
+    if (move.x1<0 || move.x2<0 || move.y1<0 || move.y2<0 || move.x1>7 || move.x2>7 || move.y1>7 || move.y2>7)
+    {
+        qDebug("Invalid data from server! Check: (%d %d) (%d %d)", move.x1, move.y1,  move.x2, move.y2);
+    }
     int piece = board[move.x2*8+move.y2];
 //    if (piece <= NOPIECE)
-        qDebug("invalid piece! %d %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
+        qDebug("Check! %d %c%c %c%c", piece, move.y1+'A', (7- move.x1) + '1',  move.y2+'A', (7-move.x2) + '1');
     board[move.x1*8+move.y1] = piece;
     board[move.x2*8+move.y2] = ex_piece;
 
