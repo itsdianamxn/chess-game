@@ -23,6 +23,7 @@
 #define MOVE 30
 #define WRONG_MOVE 40
 #define WRONG_MOVE_CHECK 50
+#define CORRECT_MOVE 60
 
 #define WHITE 1
 #define BLACK -1
@@ -922,6 +923,32 @@ bool check_king_moves(int game_board[8][8], int check_board[8][8], int i, int j,
     moves[3] = j - 1;
     if (is_move_legal(game_board, check_board, moves, side))
         return true;
+    if(side == WHITE)
+    {
+        if(i == 7 && j == 4)
+        {
+            moves[2] = i;
+            moves[3] = j + 2;
+            if(is_castling_legal(game_board,check_board,moves,side))
+                return true;
+            moves[3] = j - 2;
+            if(is_castling_legal(game_board,check_board,moves,side))
+                return true;
+        }
+    }
+    else
+    {
+        if(i == 0 && j == 4)
+        {
+            moves[2] = i;
+            moves[3] = j + 2;
+            if(is_castling_legal(game_board,check_board,moves,side))
+                return true;
+            moves[3] = j - 2;
+            if(is_castling_legal(game_board,check_board,moves,side))
+                return true;
+        }
+    }
     return false;
 }
 
@@ -1219,6 +1246,11 @@ int game(int fd1, int fd2)
             legal = is_move_legal(game_board, check_board, buffer, WHITE);
             printf("is_move_legal: %d\n", legal);
         }
+        if(sendMessage(fd1, CORRECT_MOVE, buffer, sizeof(buffer)))
+        {
+            endGame(fd1, fd2, DISCONNECTED);
+            return BLACKW;
+        }
 
         int piece_moved = game_board[buffer[0]][buffer[1]];
         game_board[buffer[0]][buffer[1]] = 0;
@@ -1310,7 +1342,11 @@ int game(int fd1, int fd2)
             legal = is_move_legal(game_board, check_board, buffer, BLACK);
             printf("is_move_legal: %d\n", legal);
         }
-
+        if(sendMessage(fd2, CORRECT_MOVE, buffer, sizeof(buffer)))
+        {
+            endGame(fd2, fd1, DISCONNECTED);
+            return WHITEW;
+        }
         piece_moved = game_board[buffer[0]][buffer[1]];
         game_board[buffer[0]][buffer[1]] = 0;
         game_board[buffer[2]][buffer[3]] = piece_moved;
