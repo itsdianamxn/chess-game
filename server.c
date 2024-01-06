@@ -1007,50 +1007,29 @@ int is_game_finished(int game_board[8][8], int check_board[8][8], int side)
                 {
                 case ROOK:
                     if (check_rook_moves(game_board, check_board, i, j, side))
-                    {
-                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
                         return true;
-                    }
                     break;
                 case KNIGHT:
                     if (check_knight_moves(game_board, check_board, i, j, side))
-                    {
-                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
                         return true;
-                    }
                     break;
                 case BISHOP:
                     if (check_bishop_moves(game_board, check_board, i, j, side))
-                    {
-                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
                         return true;
-                    }
                     break;
                 case QUEEN:
                     if (check_bishop_moves(game_board, check_board, i, j, side))
-                    {
-                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
                         return true;
-                    }
                     if (check_rook_moves(game_board, check_board, i, j, side))
-                    {
-                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
                         return true;
-                    }
                     break;
                 case KING:
                     if (check_king_moves(game_board, check_board, i, j, side))
-                    {
-                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
                         return true;
-                    }
                     break;
                 case PAWN:
                     if (check_pawn_moves(game_board, check_board, i, j, side))
-                    {
-                        printf("MOVE FOUND! Side: %d, Piece: %d\n", side, game_board[i][j]);
                         return true;
-                    }
                     break;
                 default:
                     break;
@@ -1255,13 +1234,21 @@ int game(int fd1, int fd2)
             {
                 if(buffer[3] == 6)
                 {
-                    game_board[7][5] == ROOK * WHITE;
-                    game_board[7][7] == 0;
+                    game_board[7][5] = ROOK * WHITE;
+                    game_board[7][7] = 0;
                 }
                 else
                 {
-                    game_board[7][3] == ROOK * WHITE;
-                    game_board[7][0] == 0;
+                    game_board[7][3] = ROOK * WHITE;
+                    game_board[7][0] = 0;
+                }
+                for(int i = 0; i < 8; i++)
+                {
+                    for(int j = 0; j < 8; j++)
+                    {
+                        printf("%d ",game_board[i][j]);
+                    }
+                    printf("\n");
                 }
             }
         }
@@ -1338,25 +1325,27 @@ int game(int fd1, int fd2)
             {
                 if(buffer[3] == 6)
                 {
-                    game_board[0][5] == ROOK * BLACK;
-                    game_board[0][7] == 0;
+                    game_board[0][5] = ROOK * BLACK;
+                    game_board[0][7] = 0;
                 }
                 else
                 {
-                    game_board[0][3] == ROOK * BLACK;
-                    game_board[0][0] == 0;
+                    game_board[0][3] = ROOK * BLACK;
+                    game_board[0][0] = 0;
+                }
+                for(int i = 0; i < 8; i++)
+                {
+                    for(int j = 0; j < 8; j++)
+                    {
+                        printf("%d ",game_board[i][j]);
+                    }
+                    printf("\n");
                 }
             }
         }
         update_check_board(game_board, check_board);
         state = get_game_state(game_board, check_board, WHITE);
 
-        for (int i = 0; i < 8; i++)
-        {
-            for (int j = 0; j < 8; j++)
-                printf("%d,", check_board[i][j]);
-            printf("\n");
-        }
         if (sendMessage(fd1, MOVE, buffer, sizeof(buffer)))
         {
             endGame(fd1, fd2, DISCONNECTED);
